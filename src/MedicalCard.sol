@@ -270,6 +270,8 @@ contract MedicalCardNFT is ERC721Enumerable, ERC721URIStorage, Ownable {
         require(owner != address(0), "BURN: Token does not exist");
         require(ERC721._isAuthorized(owner, msg.sender, tokenId), "BURN: Not authorized");
 
+
+
         // Вызов внутренней реализации _burn   // Call internal implementation _burn 
         ERC721._burn(tokenId);
 
