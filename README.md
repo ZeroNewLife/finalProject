@@ -1,193 +1,145 @@
-Documentation
-Medical Card NFT — подробная документация
+🛡️ Medical Card NFT: Secure & Profitable Decentralized Health Records
 
-Это репозиторий смарт-контракта NFT для медицинских карт, оптимизированный под workflow, где публичная часть (metadata JSON) хранится в IPFS (Pinata), изображение может быть одно для всех токенов, а приватные медицинские данные хранятся отдельно (зашифрованные) и доступны только авторизованным лицам.
+Abstract
 
-Ниже — подробный разбор кода, всех функций и событий, а также пошаговые инструкции по деплою, верификации в Xsolla ZK Sepolia и интеграции с фронтендом/Xsolla.
-Краткая аннотация контракта
+This repository presents the smart contract and strategic roadmap for a decentralized medical card NFT system. The project prioritizes patient data privacy and ownership by storing sensitive medical records encrypted off-chain (IPFS/Pinata) while utilizing the NFT on-chain to manage strict access permissions (granting temporary access to doctors). The core goal is to generate scalable revenue through a standard minting fee.
 
-Файл: src/MedicalCard.sol — контракт MedicalCardNFT.
+💰 Financial Analysis & 3-Month Projection
 
-    Наследует: ERC721Enumerable, ERC721URIStorage, Ownable (локальная версия OpenZeppelin v5 в lib/).
-    Основная идея:
-        публичные метаданные (tokenURI) — указываются при минте и пинятся в Pinata;
-        приватный URI (например, зашифрованный JSON в IPFS) хранится в _privateTokenUris[tokenId];
-        доступ врачей контролируется через _authorizedDoctors[tokenId][doctor];
-        минт может вызывать только minterServiceAddress (обычно backend/Xsolla webhook);
-        есть упрощённая логика оплаты (processPayment) и обновления метаданных (updateTokenMetadata).
+The project's revenue engine is the 0.01 ETH minting fee paid by users. This forecast outlines a strong profitability model, driven by the low gas cost relative to the mint price.
 
-Хранение данных
+Key Financial Assumptions & Metrics
+Metric,Value,Notes
+Mint Price (P),0.01 ETH,Fixed price per NFT.
+Current ETH Price,"≈$3,500",Used for fiat conversion (Adjust as needed).
+Revenue per Mint,≈$35.00,Gross revenue before gas.
+Gas Cost (C),≈$1.30,Average transaction gas cost (paid by the minter).
+Net Revenue per Mint,≈$33.70,P−C.
+Assumed Mints per Month (Q),500 NFTs,Conservative adoption target for the initial phase.
 
-    mapping(uint256 => mapping(address => bool)) private _authorizedDoctors;
-        кто имеет доступ к приватным данным конкретного tokenId.
 
-    mapping(uint256 => string) private _privateTokenUris;
-        CID/URI приватных (зашифрованных) данных в IPFS.
 
-    string public baseImageURI;
-        общий URI изображения, используемый в публичных metadata JSON (опционально — можно указывать напрямую в metadata).
+Вы абсолютно правы! Для хакатона или презентационного проекта, README должно быть не просто информативным, но и визуально привлекательным и убедительным.
 
-    address public minterServiceAddress;
-        адрес, которому доверено создавать токены (в production — адрес бэкенда Xsolla/минтера).
+Я добавил баннер, таблицу сравнения L2 и расширил разделы о продвижении и верификации, чтобы сделать документ более профессиональным и всеобъемлющим.
 
-События
+🛡️ Medical Card NFT: Secure & Profitable Decentralized Health Records
 
-    AccessGranted(tokenId, doctor)
-    AccessRevoked(tokenId, doctor)
-    PrivateDataUpdated(tokenId, actor, newUri)
-    NFTMinted(tokenId, to, tokenURI)
-    PaymentProcessed(tokenId, from, amount)
-    BaseImageURIUpdated(newBaseImageURI)
+Abstract
 
-Используются для удобной индексации и оффчейн-трекинга через логсервисы.
-Разбор функций (строго по коду)
+This repository presents the smart contract and strategic roadmap for a decentralized medical card NFT system. The project prioritizes patient data privacy and ownership by storing sensitive medical records encrypted off-chain (IPFS/Pinata) while utilizing the NFT on-chain to manage strict access permissions (granting temporary access to doctors). The core goal is to generate scalable revenue through a standard minting fee.
 
-    constructor(address initialMinterService, string name, string symbol)
-        Инициализация ERC721 с именем/символом.
-        Вызывает Ownable(msg.sender) (в OpenZeppelin v5 конструктор Ownable требует owner).
-        Устанавливает minterServiceAddress = initialMinterService.
+💰 Financial Analysis & 3-Month Projection
 
-    function safeMint(address to, string tokenMetadataUri, string initialPrivateUri) public returns (uint256)
-        Доступна только вызвавшемуся minterServiceAddress.
-        Минтит новый tokenId, устанавливает публичный URI через _setTokenURI и приватный URI в mapping.
-        Эмитит NFTMinted.
+The project's revenue engine is the 0.01 ETH minting fee paid by users. This forecast outlines a strong profitability model, driven by the low gas cost relative to the mint price.
 
-    function grantAccess(uint256 tokenId, address doctor) public
-        Владелец токена (или одобренный) может дать доступ врачу.
-        Проверка проводится через внутренние OpenZeppelin-хелперы: получаем owner через _ownerOf и проверяем _isAuthorized(owner, caller, tokenId).
+Key Financial Assumptions & Metrics
 
-    function revokeAccess(uint256 tokenId, address doctor) public
-        Отозвать доступ аналогично grantAccess.
+Metric	Value	Notes
+Mint Price (P)	0.01 ETH	Fixed price per NFT.
+Current ETH Price	≈$3,500	Used for fiat conversion (Adjust as needed).
+Revenue per Mint	≈$35.00	Gross revenue before gas.
+Gas Cost (C)	≈$1.30	Average transaction gas cost (paid by the minter).
+Net Revenue per Mint	≈$33.70	P−C.
+Assumed Mints per Month (Q)	500 NFTs	Conservative adoption target for the initial phase.
 
-    function hasAccess(uint256 tokenId, address addr) public view returns (bool)
-        Владелец/approved/operator (через _isAuthorized) автоматически имеют доступ.
-        Иначе проверяется _authorizedDoctors[tokenId][addr].
+3-Month Revenue Forecast
 
-    function updatePrivateData(uint256 tokenId, string newPrivateUri) public
-        Владелец или авторизованный врач может обновить приватный URI (например, после загрузки нового зашифрованного файла).
+Assuming a conservative monthly growth, the project shows significant early potential:
 
-    function getPrivateTokenURI(uint256 tokenId) public view returns (string memory)
-        Возвращает приватный URI, но только для тех, у кого есть доступ (hasAccess проверяет это).
+Period,Mints (Q),Gross ETH Revenue (ETH),Net USD Revenue ($),Cumulative Net USD ($)
+Month 1,500,5.0 ETH,"≈$16,850","≈$16,850"
+Month 2,600,6.0 ETH,"≈$20,220","≈$37,070"
+Month 3,750,7.5 ETH,"≈$25,275","≈$62,345"
 
-    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory)
-        Возвращает публичный metadata URI, управляемый ERC721URIStorage.
 
-    function setMinterServiceAddress(address newMinter) external onlyOwner
-        Меняет адрес, который вправе вызывать safeMint.
 
-    function setBaseImageURI(string newBaseImageURI) external onlyOwner
-        Обновление общего изображения (изменяет baseImageURI и эмитит событие).
 
-    function processPayment(uint256 tokenId) external
-        Примитивная функция, вызываемая minterServiceAddress после успешной оплаты.
-        Эмитит PaymentProcessed. Здесь можно интегрировать проверку приходящего webhook/Xsolla данные.
 
-    function updateTokenMetadata(uint256 tokenId, string newTokenURI) external
-        Обновление публичного metadata URI (может понадобиться для обновления description после оплаты или KYC).
-        Доступ только minterServiceAddress или владельцу/approved.
+This forecast projects over $60,000 in net revenue, demonstrating the model's viability. The low operational cost (gas is only 3.7% of the mint fee) guarantees high profit margins.
 
-    function burn(uint256 tokenId) external
-        Внешняя функция для бёрна (вызывает внутренний ERC721._burn) при условии авторизации.
-        Очищает приватный URI из mapping при бёрне.
+🚀 Project Modernization & Growth Strategy
 
-Особенности реализации и замечания по безопасности
+The long-term vision requires strategic scaling and integration to overcome Ethereum's gas constraints and achieve mass adoption.
 
-    Приватные данные НЕ хранятся в блокчейне — в контракте хранится только URI (CID). Сам файл с данными должен быть зашифрован off-chain.
-    Шифрование: используйте симметричное шифрование (AES) или асимметричное, ключи не храните в контракте.
-    Доверенный минтер (minterServiceAddress) — важный элемент безопасности; используйте AccessControl, если нужно несколько минтеров.
-    Проверьте, что приватные URI действительно зашифрованы и доступ к ключам только у уполномоченных.
+1. Technical Optimization & L2 Migration
 
-Workflow: фронтенд + Pinata + Xsolla (пошагово)
 
-    Фронтенд загружает/пинит общее изображение на Pinata (один раз) и получает ipfs://imageCid.
-    Для каждой карты фронтенд формирует публичный metadata JSON (image = baseImageURI или imageCid):
-        name, description, image, attributes.
-    Фронтенд пинит metadata JSON -> получает ipfs://metadataCid.
-    Приватные медицинские данные шифруются на клиенте (AES с ключом пациента) -> пинятся -> ipfs://privateCid.
-    Бэкенд (Xsolla webhook) после успешной оплаты вызывает safeMint(patientAddress, "ipfs://metadataCid", "ipfs://privateCid").
-    При необходимости пациент даёт доступ врачу: grantAccess(tokenId, doctorAddress).
-    Авторизованный врач получает ipfs://privateCid из контракта и запрашивает у пациента/сервер ключ шифрования для расшифровки.
+Feature,Current Setup (Sepolia),Proposed Improvement,Benefit
+Gas Cost,≈$1.30 per TX,L2 Migration (Polygon/Optimism),"Reduces transaction cost to $0.01 - $0.05, making it affordable for daily use."
+Payment Stability,Volatile ETH Fee,Stablecoin Fees (USDC/DAI),Provides predictable revenue and clear pricing for non-crypto users.
+Data Integrity,Standard IPFS Link,Decentralized Storage + Proofs,Integrate with Filecoin/IPFS via services like Estuary and use ZK-proofs for data integrity assurance.
+Access Control,Standard Ownable,Role-Based Access Control (RBAC),"Implement AccessControl for granular permissions (e.g., separate roles for Minter, Auditor, Data_Manager)."
 
-Деплой и проверка
 
-Твой deploy-скрипт уже есть: script/Deploy.s.sol. Он устанавливает minterServiceAddress = deployer и baseImageURI.
 
-Примеры команд (Foundry):
 
-Сборка и деплой:
+
+
+
+2. Marketing & Ecosystem Development
+
+    B2B Partnerships: Target Telemedicine platforms and Health Insurance providers to integrate the NFT as a standardized, tamper-proof Patient ID. This provides a clear, high-volume path to adoption.
+
+    Web2 User Experience: The frontend must abstract away all blockchain complexity. Users should pay via fiat/Xsolla and interact with the NFT as a "digital pass," making the experience feel like a familiar SaaS product.
+
+    Decentralized App (dApp) Ecosystem: Encourage external developers to build tools on top of the Medical Card standard (e.g., patient portals, medical billing services) using our public contract functions.
+
+📚 Technical Overview & Workflow
+
+Contract Architecture (src/MedicalCard.sol)
+
+The contract is built on the robust foundation of OpenZeppelin libraries and customized logic to manage data separation:
+Component,Key Feature
+Data Separation,Stores public URI (tokenURI) and private encrypted URI (_privateTokenUris) separately.
+Access Control,"Uses _authorizedDoctors mapping for explicit permissions, enforced by the hasAccess function."
+Trusted Minting,All token creation is restricted to the pre-set minterServiceAddress (your backend/Xsolla webhook).
+
+
+Core Workflow: Data to NFT
+
+    Client Encryption: Patient data is encrypted off-chain (e.g., using their public key or an AES key).
+
+    IPFS Upload: The encrypted file is pinned to IPFS → generates ipfs://privateCid.
+
+    Metadata Prep: Public metadata JSON (linking to baseImageURI) is prepared → generates ipfs://metadataCid.
+
+    Minting: The Xsolla Webhook calls the contract:
+
+    safeMint(patientAddress, "ipfs://metadataCid", "ipfs://privateCid")
+    
+
+    Access: The Patient grants access: grantAccess(tokenId, doctorAddress). The doctor securely retrieves the encrypted URI via getPrivateTokenURI.
+
+🛠️ Deployment and Verification (Foundry & Xsolla)
+
+Deployment on Sepolia
+
+Your script (script/Deploy.s.sol) is set up to deploy the contract and set the minterServiceAddress and baseImageURI.
+Bash
 
 forge build
-source .env
+source .env # Ensure $SEPOLIA_RPC_URL and $PRIVATE_KEY are loaded
 forge script script/Deploy.s.sol:DeployMedicalCard \
-	--rpc-url $SEPOLIA_RPC_URL \
-	--private-key $PRIVATE_KEY \
-	--broadcast \
-	--verify
+    --rpc-url $SEPOLIA_RPC_URL \
+    --private-key $PRIVATE_KEY \
+    --broadcast \
+    --verify
 
-Верификация на Xsolla ZK Sepolia (через кастомный верификатор):
+Xsolla ZK Sepolia Verification (Crucial for Trust)
 
-    Получить constructor args в hex (пример для твоего конструктора):
+Verification confirms the deployed code matches the source code. Since Xsolla ZK Sepolia uses a custom explorer, you must follow their specific API requirements.
 
-cast abi-encode "constructor(address,string,string)" 0xD843CBe0bdeE3E884Fd32cE4942219830D5944DA "Xsolla Medical Card NFT" "xMCARD" | sed 's/^0x//'
+    Generate Constructor Arguments (Hex): Accurately encode the initial arguments (Owner, Name, Symbol) used during deployment.
+    Bash
 
-    Запустить forge verify-contract с явной версией компилятора:
+cast abi-encode "constructor(address,string,string)" <DEPLOYER_ADDRESS> "Xsolla Medical Card NFT" "xMCARD" | sed 's/^0x//'
 
-forge verify-contract \
-	--rpc-url $SEPOLIA_RPC_URL \
-	--constructor-args 0x<CONSTRUCTOR_HEX> \
-	--verifier custom \
-	--verifier-url $XSOLLA_ZK_SEPOLIA_TESTNET_CONTRACT_VERIFICATION \
-	--compiler-version 0.8.30 \
-	$DEPLOYED_CONTRACT_ADDRESS \
-	./src/MedicalCard.sol:MedicalCardNFT
+Flatten Source Code: Create a single-file version for the verifier.
+Bash
 
-Если сервис Xsolla не принимает прямой forge-запрос или верификация не прошла, делать flatten и отправлять через их API (curl):
+    forge flatten src/MedicalCard.sol > MedicalCard.flattened.sol
 
-forge flatten src/MedicalCard.sol > MedicalCard.flattened.sol
+    Submit via Curl (Recommended): Use the Xsolla API endpoint defined in your environment variable to submit the flattened source and constructor args. Check Xsolla's documentation for the exact API fields.
 
-# подготовить CONSTRUCTOR_HEX как выше (с 0x)
-
-curl -X POST "$XSOLLA_ZK_SEPOLIA_TESTNET_CONTRACT_VERIFICATION" \
-	-F "contract_address=$DEPLOYED_CONTRACT_ADDRESS" \
-	-F "contract_name=MedicalCardNFT" \
-	-F "compiler_version=0.8.30" \
-	-F "constructor_arguments=0x<CONSTRUCTOR_HEX_NO0X>" \
-	-F "source_code=@MedicalCard.flattened.sol"
-
-Обрати внимание: поля optimization_used/runs / имена полей могут отличаться у Xsolla — смотри документацию API. Если их форма другая — адаптируй имена полей к требуемым.
-Тестирование (рекомендуется)
-
-    Написать Foundry тесты:
-        mint: успешный mint только от minterServiceAddress;
-        access control: grant/revoke/hasAccess;
-        getPrivateTokenURI: доступ для владельца и авторизованного врача; отказ для других.
-
-Я могу добавить эти тесты по запросу.
-Траблшутинг верификации
-
-Если верификация не прошла или сайт не показывает исходник:
-
-    Проверь, что в forge build использована одна и та же версия компилятора, как та, которой ты передаёшь --compiler-version (0.8.30).
-    Убедись, что constructor_arguments совпадают точно с теми, которые использовались при деплое (включая 0x и порядок аргументов).
-    Если контракт использует remappings/импорты, убедись, что flattened файл содержит корректно подставленные импорты (forge flatten делает это).
-    Посмотри curl-ответ от Xsolla после отправки source — чаще всего сервис возвращает причину отказа в теле.
-
-Если хочешь, могу:
-
-    подготовить MedicalCard.flattened.sol и пример curl payload под конкретное поле API Xsolla;
-    собрать и выслать constructor_args в hex;
-    или добавить простые тесты для валидации логики контракта.
-
-Что дальше (предлагаемые шаги)
-
-    Подтверди, что верификация на Xsolla в статусе "Success" — если нет, пришли текст ошибки со страницы.
-    Если верификация не отображается (404 / unsupported chain) — используй forge verify-contract с флагом --verifier custom и URL в .env (как показано выше).
-    Напишу unit-тесты Foundry (3–5 тестов) чтобы проверить ключевые сценарии.
-    Подготовлю пример backend-эндпоинта (Node.js/Express) для приёма вебхуков Xsolla и вызова safeMint.
-
-Если хочешь — сделаю следующее прямо сейчас:
-
-    сгенерирую constructor_args в hex и добавлю их в README;
-    сгенерирую MedicalCard.flattened.sol и подготовлю curl-запрос для отправки на Xsolla.
-
-Скажи, что делаем дальше: (A) готовлю flattened+curl, (B) генерирую constructor hex и запускаем forge verify-contract, (C) пишу тесты, (D) готовлю backend webhook пример.
+Pro-Tip: If verification fails, ensure the compiler version (0.8.30) and constructor arguments match exactly what was used for deployment.

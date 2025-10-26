@@ -448,7 +448,7 @@
 
                 <div class="price-display">
                     <div class="label">Стоимость минта</div>
-                    <div class="amount">0.005 ETH</div>
+                    <div class="amount">0.01 ETH</div>
                 </div>
 
                 <button class="btn btn-secondary" id="createBtn" disabled>
@@ -544,7 +544,7 @@
         // === КОНФИГУРАЦИЯ ===
         const CONFIG = {
             CONTRACT_ADDRESS: '0xA05A6361339f018712E292b32362cf8a2c610F5f',
-            MINT_PRICE: '0.005',
+            MINT_PRICE: '0.01',
             ABI: [
                 "function safeMint(address to, string tokenMetadataUri, string initialPrivateUri) payable returns (uint256)",
                 "function balanceOf(address owner) view returns (uint256)",
@@ -653,7 +653,7 @@
                 const publicCID = 'QmPublic' + Date.now();
                 const privateCID = 'QmPrivate' + Date.now();
 
-                showStatus('⏳ Минтим NFT... Подтвердите транзакцию (0.005 ETH)', 'info');
+                showStatus('⏳ Минтим NFT... Подтвердите транзакцию (0.01 ETH)', 'info');
 
                 const tx = await contract.safeMint(
                     userAddress,
